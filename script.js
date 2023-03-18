@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"
-import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js"
+import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js"
 
 const appSettings = {
     databaseURL: 'https://realtimedatabase-3d6f1-default-rtdb.firebaseio.com/'
@@ -15,11 +15,40 @@ const shoppingListEL = document.getElementById('shopping-list')
 
 addButtonEl.addEventListener('click', function () {
     let inputValue = inputFieldEl.value
+
     push(shoppingLstInDB, inputValue)
     clearInputFieldEl()
-    appendItemToShoppingListEl(inputValue)
-    console.log(inputValue)
+
 })
+
+
+onValue(shoppingLstInDB, function (snapshot) {
+
+    if (snapshot.exists()) {
+        let itemsArray = Object.entries(snapshot.val())
+
+        clearShoppingListEl()
+
+        for (let i = 0; i < itemsArray.length; i++) {
+
+            let currentItem = itemsArray[i]
+            let currentItemID = itemsArray[i][0]
+            let currentItemValue = itemsArray[i][1]
+
+            appendItemToShoppingListEl(currentItem)
+        }
+    } else {
+        shoppingListEL.innerHTML = '<li>Cart is Empty</li>'
+    }
+
+
+})
+
+//to clear shoppping list
+
+function clearShoppingListEl() {
+    shoppingListEL.innerHTML = ''
+}
 
 // function to clear input value 
 
@@ -29,6 +58,22 @@ function clearInputFieldEl() {
 
 //function to add an element to the list
 
-function appendItemToShoppingListEl(itemValue) {
-    shoppingListEL.innerHTML += `<li>${itemValue}</li>`
+function appendItemToShoppingListEl(item) {
+
+    let itemID = item[0]
+    let itemValue = item[1]
+
+    let newEl = document.createElement('li')
+
+    //function to remove item from the database of firebase
+
+    newEl.addEventListener('click', function () {
+        let exactLocationOfItemInDB = ref(database, `shoppingList/${itemID}`)
+        remove(exactLocationOfItemInDB)
+    })
+
+    //To add item in the cart
+
+    newEl.textContent = itemValue
+    shoppingListEL.append(newEl)
 }
